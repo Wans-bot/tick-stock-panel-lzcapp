@@ -1,0 +1,115 @@
+# subdomain 一经发布不可更改：它决定应用的实例标识与数据存储路径。
+application:
+  subdomain: tick-stock-panel
+  upstreams:
+    - location: /
+      # TSP 单容器：FastAPI 同时托管后端 API 与前端 dist，监听 3018
+      # 后端主机名 = <service 名>.<包名>.lzcapp。service 名为 tsp，
+      # 不能写成 subdomain（tick-stock-panel.…）——那样 DNS 解析不了（实测 127.0.0.11 server misbehaving）。
+      backend: http://tsp.cloud.lazycat.app.tick-stock-panel.lzcapp:3018
+      disable_trim_location: true
+  health_check:
+    test_url: http://tsp.cloud.lazycat.app.tick-stock-panel.lzcapp:3018/
+    start_period: 180s
+    timeout: 10s
+  injects:
+    # ── 网盘文件拦截（官方《自动拦截文件选择器》专题）──────────────────────────
+    # 1) 同源文件桥接：选择器读写他人共享目录时把 /__lazycat_file_bridge/* 转发到
+    #    当前微服的网盘服务 file.<微服域名>。
+    - id: lazycat-file-bridge
+      'on': request
+      auth_required: false
+      when:
+        - /__lazycat_file_bridge/*
+      do:
+        - src: |
+            const bridgePrefix = "/__lazycat_file_bridge";
+            const requestHost = String(ctx.request.host || "").split(":")[0].toLowerCase();
+            const firstDot = requestHost.indexOf(".");
+            const method = String(ctx.request.method || "").toUpperCase();
+            if (firstDot <= 0 || !requestHost.endsWith(".heiyu.space") ||
+                !["GET", "HEAD", "PUT"].includes(method)) {
+              ctx.response.send(["GET", "HEAD", "PUT"].includes(method) ? 400 : 405,
+                "Invalid LazyCat file bridge request");
+              return;
+            }
+            const boxDomain = requestHost.slice(firstDot + 1);
+            ctx.headers.del("Origin");
+            ctx.headers.del("Referer");
+            ctx.proxy.to("https://file." + boxDomain, {
+              path: "/files/home" + ctx.request.path.slice(bridgePrefix.length),
+              query: ctx.request.raw_query,
+              use_target_host: true,
+              timeout_ms: 120000,
+              on_fail: "error",
+            });
+    # 2) 统一「打开 / 保存」窗口：接管 input[type=file]、showOpen/SaveFilePicker 与
+    #    带 download 的 blob:/data: 锚点。覆盖自选股/扩展数据导入（input file）与
+    #    复盘/模拟盘/策略 CSV·Markdown 导出（blob 下载锚点）。
+    # 3) 免密登录：/login 页自动填充访问密码并提交（见 content/lazycat-injects/tsp-autologin.js）。
+    - id: tsp-autologin
+      'on': browser
+      auth_required: false
+      when:
+        - /login
+        - /login/*
+      do:
+        - src: file:///lzcapp/pkg/content/lazycat-injects/tsp-autologin.js
+          params:
+            password: '{{ index .U "access_password" | default "Tsp@Lazycat2026" }}'
+    - id: open-save-chooser
+      'on': browser
+      # 【2026-10-13 返工】保持默认 auth_required=true：本应用页面不公开、
+      # 无票据上下文里官方脚本必然报 invalid lzcapp api frontend api request
+      # （misago/defectdojo 等同类教训）；已登录评审客户端照常执行。
+      when:
+        - /*
+      do:
+        - src: >-
+            file:///lzcapp/pkg/content/lazycat-injects/lzc-file-chooser-inject.js
+          params:
+            diskRoot: /_lzc/files/home
+            fileBridgeRoot: /__lazycat_file_bridge
+            fallbackMime: application/octet-stream
+            locale: auto
+            hooks:
+              fileSystemAccess: true
+              fileInput: true
+              downloadAnchor: true
+
+services:
+  tsp:
+    # 官方工具 `lzc-cli appstore copy-image` 实际返回的中转地址（不要自行拼接）：
+    #   上游 ghcr.io/shy3130/tick-stock-panel:latest
+    #     → registry.lazycat.cloud/wans/shy3130/tick-stock-panel:ad8a9dae932d86f2
+    #   digest sha256:ad8a9dae932d86f29f9c36bbe0dbb572a7467cce2e098206b5225b1738d681fc (linux/amd64)
+    image: registry.lazycat.cloud/wans/shy3130/tick-stock-panel:ad8a9dae932d86f2
+    environment:
+      - TZ=Asia/Shanghai
+      # 镜像内已固定 STATIC_DIR / TIERS_YAML / TICKFLOW_ENV_FILE / DATA_DIR；
+      # 这里显式重申 DATA_DIR 并指向持久目录，避免数据落到未挂载卷。
+      - DATA_DIR=/app/data
+      - PORT=3018
+      # 不挂载 .env：上游 auth.py 仅在 .env 中配置 AUTH_PASSWORD 时才初始化访问密码。
+      # 不提供 .env → 应用不启用应用内密码，由平台账号体系负责鉴权，符合免密登录。
+      # TICKFLOW_API_KEY / AI_API_KEY 均留空 → 免费历史日K模式 + AI 关闭，核心功能可用。
+      - TICKFLOW_API_KEY=
+      - AI_API_KEY=
+      - LOG_LEVEL=INFO
+      # 【2026-10-13 返工 #20268】上游 0.3.5 的「访问密码」机制在公网入口下
+      # 既不能访问（API 403 NOT_INITIALIZED）也无法首次设置密码（setup 403
+      # 「仅允许本机或内网」），评审表现为「无法完成初始化」。
+      # 这里利用上游原生的 bootstrap_from_env（仅首次初始化、已设过不覆盖）：
+      # 启动时用 AUTH_PASSWORD 完成初始化 → configured=true，不再出现 setup 页；
+      # 登录页由 tsp-autologin 注入自动填充进入（免密）。密码来自部署参数
+      # （默认 Tsp@Lazycat2026，可在安装时自定义；简介披露）。
+      - AUTH_PASSWORD={{ index .U "access_password" | default "Tsp@Lazycat2026" }}
+    binds:
+      # 行情缓存、策略、回测结果、模拟盘、复盘等全部落此目录
+      - /lzcapp/var/data:/app/data
+    healthcheck:
+      test: [CMD-SHELL, "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:3018/', timeout=5)\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 120s

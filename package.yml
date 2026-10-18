@@ -1,0 +1,66 @@
+package: cloud.lazycat.app.tick-stock-panel
+version: 0.3.5-3
+name: TSP 量化工作台
+description: 本地自托管的 A 股量化研究工作台，策略、回测、监控、因子挖掘一站式
+author: tick-stock-panel contributors
+license: MIT
+homepage: https://github.com/shy3130/tick-stock-panel
+min_os_version: 1.6.0
+
+permissions:
+  required:
+    - net.internet
+    # TSP 通过外网行情接口拉取 A 股历史与实时数据（TickFlow / fuyao 数据源），并可调用 AI 接口
+    - net.lan
+
+locales:
+  zh-CN:
+    name: TSP 量化工作台
+    description: 本地自托管的 A 股量化研究工作台，策略、回测、监控、因子挖掘一站式。
+    usage: |
+      TSP 是一套在微服上本地运行的 A 股量化研究工作台，用策略、回测、监控和因子挖掘帮你做本地研究。所有数据、策略与回测结果都保存在你的微服上，不依赖交易账户。
+
+      审核账号（面板访问密码；安装时未自定义则使用默认值。打开应用会自动填充登录，一般不需要手打）：
+      - 访问密码：Tsp@Lazycat2026
+
+      首次使用：
+      1. 打开应用会自动填入访问密码并登录；无需注册账号，也无需填写 API Key 即可使用基础功能（历史日K 数据免费）。
+      2. 首页「监控中心」实时展示自选股行情、涨跌异动与市场概览。
+      3. 「自选股」里可以手动添加代码，或导入自选股文件（支持从懒猫网盘选择文件）。
+      4. 「策略」里编辑、运行选股策略，「回测」里对策略做历史回测，查看收益曲线与指标。
+      5. 「因子」里做因子挖掘，「复盘」里生成每日复盘报告并可导出。
+
+      进阶（可选）：
+      - 在「设置 → 数据源」填入 TickFlow API Key 可解锁全市场实时行情与更多历史数据；不填也能正常使用历史日K。
+      - 在「设置 → AI」填入任意 OpenAI 兼容接口（如 DeepSeek、通义千问、Ollama）可启用 AI 策略生成、报告与对话助手；不填则 AI 相关功能关闭，不影响其它功能。
+
+      说明：
+      - 本应用仅用于量化学习与研究，不构成任何投资建议，不对标同花顺/通达信，也不提供 AI 荐股或涨停预测。
+      - 「模拟盘」用于记录虚拟成交，不连接券商、不产生真实交易。
+      - 所有配置、行情缓存、策略与回测结果保存在微服数据目录，重启和升级都不会丢失。
+      - 应用入口由微服账号体系保护；面板自身的访问密码已按默认值预置并自动填充登录，打开即用。安装时可在部署参数里自定义访问密码。
+  en-US:
+    name: TSP Quant Workbench
+    description: A self-hosted A-share quant research workbench with strategy, backtest, monitoring and factor mining.
+    usage: |
+      TSP is a self-hosted A-share quant research workbench that runs entirely on your box. It covers strategy, backtest, monitoring and factor mining for local research. All data, strategies and backtest results stay on your box and it never connects to a brokerage account.
+
+      Review account (panel access password; the default is used when no custom value is set at install time. The app fills it in automatically, so typing is normally not needed):
+      - Password: Tsp@Lazycat2026
+
+      Getting started:
+      1. Opening the app fills in the access password and signs you in; no sign-up and no API key needed for basic features (free historical daily K-line).
+      2. The dashboard shows watchlist quotes, market movers and an overview in real time.
+      3. Add symbols under "Watchlist" manually, or import a watchlist file (you can pick a file from the LazyCat drive).
+      4. Under "Strategy" edit and run screening strategies; under "Backtest" run historical backtests and inspect equity curves and metrics.
+      5. Use "Factor" for factor mining and "Review" to generate and export daily review reports.
+
+      Advanced (optional):
+      - Enter a TickFlow API key under "Settings → Data Source" to unlock full-market real-time quotes and more history; without a key, historical daily K-line still works.
+      - Enter any OpenAI-compatible endpoint (DeepSeek, Qwen, Ollama, …) under "Settings → AI" to enable AI strategy generation, reports and the assistant; without a key, AI features are off and everything else works normally.
+
+      Notes:
+      - For quant learning and research only. This is not investment advice; it does not target Tonghuashun/GuandaXin and offers no AI stock tips or limit-up predictions.
+      - The "Paper" account records virtual fills only. It never connects to a broker and never places real orders.
+      - Settings, quote cache, strategies and backtest results are stored in the app data directory and survive restarts and upgrades.
+      - The app entry is protected by the box account system; the panel's own access password is pre-set to the default and filled in automatically, so the app is ready to use on open. You can set a custom password in the deploy parameters at install time.

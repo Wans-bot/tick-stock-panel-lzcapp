@@ -1,0 +1,53 @@
+params:
+  # TickFlow API Key：可选。不填 = 免费模式，仅历史日K；填入后解锁全市场实时行情与更多历史数据。
+  - id: tickflow_api_key
+    type: secret
+    name: TickFlow API Key
+    description: 可选。留空使用免费模式（历史日K可用）；填写后解锁全市场实时行情与更多历史数据。可在 tickflow.org 注册获取。
+    optional: true
+    default_value: ""
+  # AI 接口：可选。任意 OpenAI 兼容端点。不填则 AI 策略生成/报告/对话关闭，其它功能不受影响。
+  - id: ai_api_key
+    type: secret
+    name: AI 接口密钥
+    description: 可选。任意 OpenAI 兼容接口（DeepSeek / 通义千问 / Ollama 等）。留空则关闭 AI 功能，不影响策略、回测、监控等核心能力。
+    optional: true
+    default_value: ""
+  - id: ai_base_url
+    type: string
+    name: AI 接口地址
+    description: 可选。OpenAI 兼容接口的 Base URL，例如 https://api.deepseek.com/v1。留空使用默认。
+    optional: true
+    default_value: ""
+
+# 【2026-10-13 返工 #20268】面板访问密码（上游 0.3.5 的 AUTH_PASSWORD 机制）。
+  - id: access_password
+    type: string
+    name: "面板访问密码（默认 Tsp@Lazycat2026）"
+    description: >-
+      面板自身的访问密码（至少 6 位）。留空即用默认值 Tsp@Lazycat2026，
+      安装后打开应用会自动填充登录。该值仅在首次初始化时写入；
+      之后修改此参数不会重置已设置的密码（请在应用内「设置」里改密码）。
+    optional: true
+
+locales:
+  zh-CN:
+    tickflow_api_key:
+      name: TickFlow API Key
+      description: 可选。留空使用免费模式（历史日K可用）；填写后解锁全市场实时行情与更多历史数据。可在 tickflow.org 注册获取。
+    ai_api_key:
+      name: AI 接口密钥
+      description: 可选。任意 OpenAI 兼容接口（DeepSeek / 通义千问 / Ollama 等）。留空则关闭 AI 功能，不影响策略、回测、监控等核心能力。
+    ai_base_url:
+      name: AI 接口地址
+      description: 可选。OpenAI 兼容接口的 Base URL，例如 https://api.deepseek.com/v1。留空使用默认。
+  en-US:
+    tickflow_api_key:
+      name: TickFlow API Key
+      description: Optional. Leave empty for the free mode (historical daily K-line). Add a key to unlock full-market real-time quotes and more history. Register at tickflow.org.
+    ai_api_key:
+      name: AI API Key
+      description: Optional. Any OpenAI-compatible endpoint (DeepSeek / Qwen / Ollama / …). Leave empty to disable AI; strategies, backtests and monitoring still work.
+    ai_base_url:
+      name: AI Base URL
+      description: Optional. Base URL of the OpenAI-compatible endpoint, e.g. https://api.deepseek.com/v1. Leave empty for default.
